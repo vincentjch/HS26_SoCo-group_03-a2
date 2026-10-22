@@ -1,0 +1,9 @@
+["seq",
+    ["set", "fib", ["func", [["n", "int"]], "int",
+        ["if", ["lt", ["get", "n"], 2],
+            ["get", "n"],
+            ["add",
+                ["call", "fib", ["sub", ["get", "n"], 1]],
+                ["call", "fib", ["sub", ["get", "n"], 2]]]]]],
+    ["print", ["call", "fib", 15]]
+]

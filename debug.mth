@@ -1,0 +1,14 @@
+["seq",
+    ["set", "counter", 0],
+    ["debug", "top-level breakpoint: counter is 0"],
+    ["set", "add_n", ["func", [["n", "int"]], "int",
+        ["seq",
+            ["debug", "inside add_n: n and counter are visible"],
+            ["set", "counter", ["add", ["get", "counter"], ["get", "n"]]],
+            ["debug", "after increment"],
+            ["get", "counter"]]]],
+    ["call", "add_n", 5],
+    ["call", "add_n", 7],
+    ["debug", "final breakpoint"],
+    ["print", ["get", "counter"]]
+]

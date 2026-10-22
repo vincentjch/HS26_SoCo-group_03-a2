@@ -1,0 +1,5 @@
+["seq",
+    ["set", "spin", ["func", [["n", "int"]], "int",
+        ["call", "spin", ["add", ["get", "n"], 1]]]],
+    ["print", ["call", "spin", 1]]
+]

@@ -1,0 +1,22 @@
+["seq",
+    ["struct", "Box", [["w", "int"], ["h", "int"]]],
+    ["set", "b", ["make", "Box", 3, 4]],
+
+    ["set", "area", ["func", [["b", "Box"]], "int",
+        ["mult", ["field_get", ["get", "b"], "w"], ["field_get", ["get", "b"], "h"]]]],
+    ["print", ["call", "area", ["get", "b"]]],
+
+    ["set", "size_of", ["func", [["a", ["array", "notnull"]]], "int",
+        ["array_size", ["get", "a"]]]],
+    ["set", "vals", ["new_array", "int", 3]],
+    ["print", ["call", "size_of", ["get", "vals"]]],
+
+    ["set", "no_result", ["func", [], "null", ["print", 7]]],
+    ["print", ["call", "no_result"]],
+
+    ["set", "safe_div", ["func", [["a", ["int", "notnull", "notzero"]], ["b", ["int", "notzero"]]], "float",
+        ["div", ["get", "a"], ["get", "b"]]]],
+    ["print", ["call", "safe_div", 10, 2]],
+
+    ["print", ["call", "safe_div", 10, 0]]
+]

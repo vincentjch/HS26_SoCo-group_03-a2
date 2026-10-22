@@ -1,0 +1,44 @@
+["seq",
+    ["set", "double", ["func", [["n", "int"]], "int", ["add", ["get", "n"], ["get", "n"]]]],
+    ["print", ["call", "double", 21]],
+    ["print", ["mult", 6, 7]],
+    ["print", ["div", 12, 4]],
+    ["print", ["pow", 2, 10]],
+    ["print", ["mod", 17, 5]],
+
+    ["print", ["lt", 3, 5]],
+    ["print", ["gt", 3, 5]],
+    ["print", ["le", 5, 5]],
+    ["print", ["ge", 4, 5]],
+    ["print", ["equal", 7, 7]],
+    ["print", ["not_equal", 7, 7]],
+
+    ["print", ["if", ["lt", 2, 3], 111, 222]],
+    ["print", ["if", ["lt", 4, 3], 111, []]],
+
+    ["struct", "Point", [["x", "int"], ["y", "int"]]],
+    ["set", "p", ["make", "Point", 7, 8]],
+    ["print", ["field_get", "p", "x"]],
+    ["field_set", "p", "x", 10],
+    ["print", ["field_get", "p", "x"]],
+
+    ["set", "total_xy", ["func", [["p", "Point"]], "int",
+        ["add", ["field_get", ["get", "p"], "x"], ["field_get", ["get", "p"], "y"]]]],
+    ["print", ["call", "total_xy", ["get", "p"]]],
+
+    ["set", "flip", ["func", [["p", "Point"]], "Point",
+        ["make", "Point", ["field_get", ["get", "p"], "y"], ["field_get", ["get", "p"], "x"]]]],
+    ["print", ["field_get", ["call", "flip", ["get", "p"]], "x"]],
+
+    ["set", "squares", ["new_array", "int", 6]],
+    ["for", "i", ["range", 6],
+        ["array_set", ["get", "squares"], ["get", "i"], ["mult", ["get", "i"], ["get", "i"]]]],
+    ["print", ["array_get", ["get", "squares"], 4]],
+
+    ["set", "sq_sum", 0],
+    ["for", "x", ["get", "squares"],
+        ["set", "sq_sum", ["add", ["get", "sq_sum"], ["get", "x"]]]],
+    ["print", ["get", "sq_sum"]],
+
+    ["set", "first_cell", ["func", [["m", "array"]], "int", ["array_get", ["get", "m"], 0]]]
+]
