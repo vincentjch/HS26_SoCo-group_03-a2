@@ -50,6 +50,42 @@ def do_mod(envs, args):
     second=do(envs, args[1])
     return first%second
 
+def do_lt(envs, args):
+    assert len(args)==2
+    first=do(envs, args[0])
+    second=do(envs, args[1])
+    return first < second
+
+def do_gt(envs, args):
+    assert len(args)==2
+    first=do(envs, args[0])
+    second=do(envs, args[1])
+    return first > second
+
+def do_le(envs, args):
+    assert len(args)==2
+    first=do(envs, args[0])
+    second=do(envs, args[1])
+    return first <= second
+
+def do_ge(envs, args):
+    assert len(args)==2
+    first=do(envs, args[0])
+    second=do(envs, args[1])
+    return first >= second
+
+def do_equal(envs, args):
+    assert len(args)==2
+    first=do(envs, args[0])
+    second=do(envs, args[1])
+    return first = second
+
+def do_not_equal(envs, args):
+    assert len(args)==2
+    first=do(envs, args[0])
+    second=do(envs, args[1])
+    return first != second
+
 def do_set(envs, args):
     assert len(args) == 2
     assert isinstance(args[0], str)
