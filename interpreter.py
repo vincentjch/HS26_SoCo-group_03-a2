@@ -88,7 +88,7 @@ def do_equal(envs, args):
     second=do(envs, args[1])
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
-    return first = second
+    return first == second
 
 def do_not_equal(envs, args):
     assert len(args)==2
@@ -98,29 +98,57 @@ def do_not_equal(envs, args):
     assert isinstance(second, (int, float)), "Invalid type"
     return first != second
 
+########ARRAYS########
+def do_new_array(envs, args):
+    assert len(args)==3 #name, type and length of the array
+    assert isinstance(args[0], str)
+    
+    name=envs, args[0] #no need of do(), its already a string
+    #check if do() needed after coding datatypes
+    data_type=args[1]
+    size=do(envs, args[2])
+    assert isinstance(size, int) and size>=0
+    if data_type==float:
+        array=[0.0]*size
+    else:
+        array=[0]*size
+    env_set(envs, name, array)
+    return array
+
+def do_array_get(envs, args):
+    pass
+
+def do_array_set(envs, args):
+    pass
+
+def do_array_size(envs, args):
+    pass
+
 
 ########FUNCTIONALITIES##########
+#create or update a variable
 def do_set(envs, args):
     assert len(args) == 2
     assert isinstance(args[0], str)
     name = args[0]
     value = do(envs, args[1])
+    #store it in the environment
     env_set(envs, name, value)
     return value
 
-
+#store a name, value in the environment
 def env_set(envs, name, value):
     assert isinstance(name, str)
     envs[-1][name] = value
 
-
+#get a variable from our environment, using env_get
 def do_get(envs, args):
     assert len(args) == 1
     assert isinstance(args[0], str)
     name = args[0]
     return env_get(envs, name)
 
-
+#allows interpreter to do stuff iteritavely (treats args one after the other)
 def do_seq(envs, args):
     assert len(args) > 0
     for item in args:
@@ -129,11 +157,39 @@ def do_seq(envs, args):
 
 
 def do_func(envs, args):
-    assert len(args) == 2
+    assert len(args) == 3
     params = args[0]
-    body = args[1]
-    return ["func", params, body]
+    return_type=args[1]
+    #will need to check that return_type is in int, float, array or struct once struct is coded
+    body = args[2]
+    return ["func", params, return_type, body]
 
+def do_if(envs, args):
+    assert len(args)==3
+    cond_expr=do(envs, args[0])
+    #previous line could crash without my addition to do()
+    if cond_expr==[]:
+        return None
+    if cond_expr:
+        then_expr=do(envs, args[1])
+        if then_expr==[]:
+            return None
+        return then_expr
+    else_expr=do(envs, args[2])
+    if else_expr==[]:
+        return None
+    return else_expr
+
+def do_null(envs, args):
+    assert len(args)==0
+    return None
+
+def do_print(envs, args):
+    values=[]
+    for thing in args:
+        values.append(do(envs, thing))
+    pprint.pprint(values)
+    return None
 
 def env_get(envs, name):
     assert isinstance(name, str)
@@ -144,21 +200,31 @@ def env_get(envs, name):
 
 
 def do_call(envs, args):
-    assert len(args) >= 1
-
     func_name = args[0]
-    values = [do(envs, a) for a in args[1:]]
 
+    assert len(args) >= 1 or func_name=="null"
+
+    values = [do(envs, a) for a in args[1:]]
+    
+    #fun is a list representing a function
+    #looked up in the environmnet
     fun = env_get(envs, func_name)
 
-    assert isinstance(fun, list) and (len(fun) == 3) and (fun[0] == "func")
+    assert isinstance(fun, list) and (len(fun) == 4) and (fun[0] == "func") #len is 4 because of return type
     params = fun[1]
-    body = fun[2]
+    return_type=fun[2]
+    body = fun[3]
 
     assert len(params) == len(values)
 
     local_env = dict()
-    for index, param_name in enumerate(params):
+    for index, param in enumerate(params): #enumerating allows us to know which value belongs to which parameter
+        #we need an extra check here
+        if isinstance(param, list): #if list: then type is specified
+            param_name=param[0]
+            param_type=param[1]
+        else:   #if not, proceed as before
+            param_name=param
         local_env[param_name] = values[index]
     envs.append(local_env)
     result = do(envs, body)
@@ -170,6 +236,10 @@ def do(envs, expr):
     if isinstance(expr, int):
         return expr
 
+    #my do_if block was crashing, added this to handle the [] seperately
+    if expr==[]:
+        return []
+    
     assert isinstance(expr, list)
     func_name = expr[0]
     args = expr[1:]
