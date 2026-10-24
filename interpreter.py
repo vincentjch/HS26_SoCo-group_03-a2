@@ -124,6 +124,32 @@ def do_array_set(envs, args):
 def do_array_size(envs, args):
     pass
 
+########DECLARED TYPES##########
+def do_struct(envs, args):
+    assert len(args)==2
+
+    type_name=args[0]
+    structure=args[1]
+    
+    assert isinstance(type_name, str)
+    assert isinstance(structure, list)
+    for entry in structure:
+        assert isinstance(entry, list)
+        assert isinstance(entry[0], str)    #first entry is the name
+        #assert isinstance(entry[1],  ) will check here if the second entry is of any known type or new declared struct type
+
+
+
+
+def do_make(envs, args):
+    assert len(args)>=1
+
+
+def do_field_get(envs, args):
+    pass
+
+def do_field_set(envs, args):
+    pass
 
 ########FUNCTIONALITIES##########
 #create or update a variable
@@ -214,7 +240,6 @@ def do_call(envs, args):
     params = fun[1]
     return_type=fun[2]
     body = fun[3]
-
     assert len(params) == len(values)
 
     local_env = dict()
@@ -223,9 +248,13 @@ def do_call(envs, args):
         if isinstance(param, list): #if list: then type is specified
             param_name=param[0]
             param_type=param[1]
+            #check, at every function call, that each argument satisfies the
+            #annotated type of the parameter
+            assert isinstance(values[index], TYPES[param_type]), func_name + "expect a" + param_type + " and got " + str(values[index])
         else:   #if not, proceed as before
             param_name=param
         local_env[param_name] = values[index]
+
     envs.append(local_env)
     result = do(envs, body)
     envs.pop()
@@ -251,7 +280,10 @@ def do(envs, expr):
     fun = OPS[func_name]
     return fun(envs, args)
 
+#######DEFINED VARIABLE TYPES######
+TYPES={"int": int, "float":float, "array":list} #will possibly be completed with new, user declared types
 
+#######OPERATIONS######
 def get_ops():
     ops = dict()
     for name, fun in globals().items():
@@ -259,8 +291,8 @@ def get_ops():
             ops[name.replace("do_", "")] = fun
     return ops
 
-
 OPS = get_ops()
+
 
 
 def main():
