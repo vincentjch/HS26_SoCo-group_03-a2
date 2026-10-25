@@ -10,3 +10,9 @@ Order in which part 1 was coded:
 4. None and print. 
 
 5. Type anotations. Started modifying do_func before noticing it is do_call() that breaks with type annotation. Undid the previous work and moved the extentions/modifications to do_call().
+
+6. Struct definition. Added a global TYPES dictionary to store user-defined types.
+
+7. make() to instanciate a struct.
+
+8. NEXT: field_get and field_set.

@@ -129,20 +129,42 @@ def do_struct(envs, args):
     assert len(args)==2
 
     type_name=args[0]
-    structure=args[1]
+    fields=args[1]
     
     assert isinstance(type_name, str)
-    assert isinstance(structure, list)
-    for entry in structure:
+    assert isinstance(fields, list)
+    for entry in fields:
         assert isinstance(entry, list)
         assert isinstance(entry[0], str)    #first entry is the name
-        #assert isinstance(entry[1],  ) will check here if the second entry is of any known type or new declared struct type
+        assert isinstance(entry[1], tuple(TYPES.values())) #second entry is of know type
+        assert type_name not in TYPES #make sure the type dosn't exists yet
+    
+    TYPES[type_name]=fields #now becomes a knew object type
+    return None
 
-
-
-
+#syntaxe: ["make", "Point", 7, 8]
 def do_make(envs, args):
     assert len(args)>=1
+    type_name=args[0]
+    assert type_name in TYPES, "Unknown type"
+    fields=TYPES[type_name] #get the fields tied to the specific type we want to build. fields looks something like [["x", "int"], ["y", "int"]]
+    values = [do(envs, a) for a in args[1:]] #evaluate the other entries
+
+    assert len(fields)==len(values) #we check there are the same number of fields as values
+
+    field_values={}     #we will store the fieds and corresponding values here, after ziping them together and checks
+    for field, value in zip(fields, values):
+        field_name=field[0]     #because field looks like ["x", "int"]
+        field_type=field[1]
+        assert isinstance(value, field_type) #check the value is of correct type
+
+        field_values[field_name]=value
+
+    instance={
+        "type": type_name,
+        "fields": field_values
+    }
+    return instance
 
 
 def do_field_get(envs, args):
