@@ -15,5 +15,16 @@ Order in which part 1 was coded:
 
 7. make() to instanciate a struct.
 
-8. NEXT: - field_get (make sure the tests to ensure the instance is a struct are complete)
-        - field_set.
+8. field_get, field_set.
+
+9. new_array. 
+
+TO DO NEXT:
+10. finish implementing arrays. 
+11. Tasks 2 and 3
+
+NOTES FOR PAUL:
+there might be something to tackle with arrays and do(). Do() dispatches as long as what we are feeding it is a list... but if we have our array type it might confuse things (maybe not, but we should watch out). 
+
+
+

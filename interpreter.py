@@ -33,7 +33,7 @@ def do_div(envs, args):
     assert len(args)==2
     first=do(envs, args[0])
     second=do(envs, args[1])
-    assert second!=0
+    assert second!=0, "Cannot divide by zero"
     return first/second
 
 def do_pow(envs, args):
@@ -46,6 +46,7 @@ def do_mod(envs, args):
     assert len(args)==2
     first=do(envs, args[0])
     second=do(envs, args[1])
+    assert second>0, "Cannot mod by zero"
     return first%second
 
 
@@ -128,7 +129,7 @@ def do_array_size(envs, args):
     pass
 
 ########DECLARED TYPES##########
-#structure: ["struct", "Point", [["x", "int"], ["y", "int"]]]
+#looks like: ["struct", "Point", [["x", "int"], ["y", "int"]]]
 def do_struct(envs, args):
     assert len(args)==2
 
@@ -140,13 +141,13 @@ def do_struct(envs, args):
     for entry in fields:
         assert isinstance(entry, list)
         assert isinstance(entry[0], str)    #first entry is the name
-        assert isinstance(entry[1], tuple(TYPES.values())) #second entry is of know type
-        assert type_name not in TYPES #make sure the type dosn't exists yet
+        assert entry[1] in TYPES     #second entry is of known type
+        assert type_name not in TYPES, "Type name already defined" #make sure the type dosn't exists yet
     
     TYPES[type_name]=fields #now becomes a knew object type
     return None
 
-#syntaxe: ["make", "Point", 7, 8]
+#looks like: ["make", "Point", 7, 8]
 def do_make(envs, args):
     assert len(args)>=1
     type_name=args[0]
@@ -160,7 +161,7 @@ def do_make(envs, args):
     for field, value in zip(fields, values):
         field_name=field[0]     #because field looks like ["x", "int"]
         field_type=field[1]
-        assert isinstance(value, field_type) #check the value is of correct type
+        assert isinstance(value, TYPES[field_type]), "Incompatible types. Expected:" + field_type + "provided was: " + type(value) #check the value is of correct type
 
         field_values[field_name]=value
 
@@ -170,7 +171,7 @@ def do_make(envs, args):
     }
     return instance
 
-#structure: ["field_get", "p", "x"]]
+#looks like: ["field_get", "p", "x"]]
 def do_field_get(envs, args):
     assert len(args)==2 #instance of a struct and name of one of its fields
 
@@ -195,7 +196,7 @@ def do_field_get(envs, args):
     assert field_name in instance_fields #we make sure field_name appears in instanc_fields
     return instance_fields[field_name]
 
-#structure: ["field_set", "p", "x", 10]
+#looks like: ["field_set", "p", "x", 10]
 def do_field_set(envs, args):
     assert len(args)==3
     #re-use the structure of do_field_get
@@ -214,17 +215,18 @@ def do_field_set(envs, args):
 
     #we now need to check that new_value is of the same type as the field we want to replace/define it
     #retrieve the type:
-    type_name=instance[type]
-    fields=TYPES["type_name"]
+    type_name=instance["type"]
+    fields=TYPES[type_name]
     #find the concerned field
     for name, declared_type in fields:
         if name ==concerned_field:
             #check that the types correspond
-            assert declared_type==type(new_value), "Cannot set, expected type" + declared_type
+            assert TYPES[declared_type]==type(new_value), "Cannot set, expected type" + declared_type
+            #note: without the TYPES[], we were comparing int with "int" etc
             break
 
     #only then, replace/set:
-    instance[fields][concerned_field]=new_value
+    instance["fields"][concerned_field]=new_value
 
 
 ########FUNCTIONALITIES##########
@@ -286,11 +288,14 @@ def do_null(envs, args):
     assert len(args)==0
     return None
 
+#looks like: ["print", ["mult", 6, 7]]
 def do_print(envs, args):
-    values=[]
-    for thing in args:
-        values.append(do(envs, thing))
-    pprint.pprint(values)
+    assert len(args)==1
+    assert isinstance(args[0], list)
+
+    result_to_print=do(envs, args)
+    
+    pprint.pprint(result_to_print)
     return None
 
 def env_get(envs, name):
@@ -338,7 +343,8 @@ def do_call(envs, args):
 
 
 def do(envs, expr):
-    if isinstance(expr, int):
+    #modified so it doesn't just accept ints as atoms but also arrays and other defined types
+    if not isinstance(expr, list):
         return expr
 
     #my do_if block was crashing, added this to handle the [] seperately
@@ -348,11 +354,8 @@ def do(envs, expr):
     assert isinstance(expr, list)
     func_name = expr[0]
     args = expr[1:]
-    assert func_name in OPS, (
-        "only add, abs, sub, set, get, seq, func, and call are supported in our DSL. "
-        + func_name
-        + " is not supported"
-    )
+    assert func_name in OPS
+    
     fun = OPS[func_name]
     return fun(envs, args)
 
