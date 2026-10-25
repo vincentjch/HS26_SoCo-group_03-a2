@@ -9,11 +9,13 @@ def do_add(envs, args):
     second = do(envs, args[1])
     return first + second
 
+
 def do_sub(envs, args):
     assert len(args) == 2
     first = do(envs, args[0])
     second = do(envs, args[1])
     return first - second
+
 
 def do_abs(envs, args):
     assert len(args) == 1
@@ -23,11 +25,13 @@ def do_abs(envs, args):
     if value < 0:
         return -value
 
+
 def do_mult(envs, args):
     assert len(args)==2
     first=do(envs, args[0])
     second=do(envs, args[1])
     return first*second
+
 
 def do_div(envs, args):
     assert len(args)==2
@@ -36,11 +40,13 @@ def do_div(envs, args):
     assert second!=0, "Cannot divide by zero"
     return first/second
 
+
 def do_pow(envs, args):
     assert len(args)==2
     first=do(envs, args[0])
     second=do(envs, args[1])
     return first**second
+
 
 def do_mod(envs, args):
     assert len(args)==2
@@ -59,6 +65,7 @@ def do_lt(envs, args):
     assert isinstance(second, (int, float)), "Invalid type"
     return first < second
 
+
 def do_gt(envs, args):
     assert len(args)==2
     first=do(envs, args[0])
@@ -66,6 +73,7 @@ def do_gt(envs, args):
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
     return first > second
+
 
 def do_le(envs, args):
     assert len(args)==2
@@ -75,6 +83,7 @@ def do_le(envs, args):
     assert isinstance(second, (int, float)), "Invalid type"
     return first <= second
 
+
 def do_ge(envs, args):
     assert len(args)==2
     first=do(envs, args[0])
@@ -82,6 +91,7 @@ def do_ge(envs, args):
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
     return first >= second
+
 
 def do_equal(envs, args):
     assert len(args)==2
@@ -91,6 +101,7 @@ def do_equal(envs, args):
     assert isinstance(second, (int, float)), "Invalid type"
     return first == second
 
+
 def do_not_equal(envs, args):
     assert len(args)==2
     first=do(envs, args[0])
@@ -98,6 +109,7 @@ def do_not_equal(envs, args):
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
     return first != second
+
 
 ########ARRAYS########
 #looks like: ["new_array", "int", 6]
@@ -118,15 +130,19 @@ def do_new_array(envs, args):
     env_set(envs, name, array)
     return array
 
+
 #looks like: ["array_get", ["get", "m"], 0]
 def do_array_get(envs, args):
     pass
 
+
 def do_array_set(envs, args):
     pass
 
+
 def do_array_size(envs, args):
     pass
+
 
 ########DECLARED TYPES##########
 #looks like: ["struct", "Point", [["x", "int"], ["y", "int"]]]
@@ -146,6 +162,7 @@ def do_struct(envs, args):
     
     TYPES[type_name]=fields #now becomes a knew object type
     return None
+
 
 #looks like: ["make", "Point", 7, 8]
 def do_make(envs, args):
@@ -171,6 +188,7 @@ def do_make(envs, args):
     }
     return instance
 
+
 #looks like: ["field_get", "p", "x"]]
 def do_field_get(envs, args):
     assert len(args)==2 #instance of a struct and name of one of its fields
@@ -195,6 +213,7 @@ def do_field_get(envs, args):
     instance_fields=instance["fields"]
     assert field_name in instance_fields #we make sure field_name appears in instanc_fields
     return instance_fields[field_name]
+
 
 #looks like: ["field_set", "p", "x", 10]
 def do_field_set(envs, args):
@@ -240,10 +259,12 @@ def do_set(envs, args):
     env_set(envs, name, value)
     return value
 
+
 #store a name, value in the environment
 def env_set(envs, name, value):
     assert isinstance(name, str)
     envs[-1][name] = value
+
 
 #get a variable from our environment, using env_get
 def do_get(envs, args):
@@ -251,6 +272,7 @@ def do_get(envs, args):
     assert isinstance(args[0], str)
     name = args[0]
     return env_get(envs, name)
+
 
 #allows interpreter to do stuff iteritavely (treats args one after the other)
 def do_seq(envs, args):
@@ -260,6 +282,7 @@ def do_seq(envs, args):
     return result
 
 
+#create a function
 def do_func(envs, args):
     assert len(args) == 3
     params = args[0]
@@ -268,25 +291,29 @@ def do_func(envs, args):
     body = args[2]
     return ["func", params, return_type, body]
 
+
+#looks like: ["if", ["lt", 2, 3], 111, 222] so (if, condition, then, else)
 def do_if(envs, args):
     assert len(args)==3
+    
     cond_expr=do(envs, args[0])
-    #previous line could crash without my addition to do()
-    if cond_expr==[]:
-        return None
+    
     if cond_expr:
-        then_expr=do(envs, args[1])
-        if then_expr==[]:
-            return None
-        return then_expr
-    else_expr=do(envs, args[2])
-    if else_expr==[]:
+        branch=args[1]
+    else:
+        branch=args[2]
+
+    if branch==[]:
         return None
-    return else_expr
+
+    result=do(envs, branch)
+    return result
+
 
 def do_null(envs, args):
     assert len(args)==0
     return None
+
 
 #looks like: ["print", ["mult", 6, 7]]
 def do_print(envs, args):
@@ -297,6 +324,7 @@ def do_print(envs, args):
     
     pprint.pprint(result_to_print)
     return None
+
 
 def env_get(envs, name):
     assert isinstance(name, str)
@@ -346,21 +374,19 @@ def do(envs, expr):
     #modified so it doesn't just accept ints as atoms but also arrays and other defined types
     if not isinstance(expr, list):
         return expr
-
-    #my do_if block was crashing, added this to handle the [] seperately
-    if expr==[]:
-        return []
     
     assert isinstance(expr, list)
     func_name = expr[0]
     args = expr[1:]
     assert func_name in OPS
-    
+
     fun = OPS[func_name]
     return fun(envs, args)
 
+
 #######DEFINED VARIABLE TYPES######
 TYPES={"int": int, "float":float, "array":list} #will possibly be completed with new, user declared types
+
 
 #######OPERATIONS######
 def get_ops():
@@ -372,7 +398,7 @@ def get_ops():
 
 OPS = get_ops()
 
-
+##########################
 
 def main():
     assert len(sys.argv) == 2, "Usage: interpreter.py <filename>"
