@@ -125,6 +125,7 @@ def do_array_size(envs, args):
     pass
 
 ########DECLARED TYPES##########
+#structure: ["struct", "Point", [["x", "int"], ["y", "int"]]]
 def do_struct(envs, args):
     assert len(args)==2
 
@@ -166,9 +167,20 @@ def do_make(envs, args):
     }
     return instance
 
-
+#structure: ["field_get", "p", "x"]]
 def do_field_get(envs, args):
-    pass
+    assert len(args)==2 #instance of a struct and name of one of its fields
+    
+    instance=do(envs, args[0])
+    
+    #check that the instance arg is a struct
+    assert isinstance(instance, tuple(TYPES.values())) and not isinstance(instance, int) and not isinstance(instance, float) and not isinstance(instance, list)
+
+    field_name=args[1]
+    instance_fields=instance[1]
+    #remember: instance_fields looks like [["x", "int"], ["y", "int"]]. Hence:
+    assert field_name in [a[0] for a in instance_fields] #we make sure field_name appears in instanc_fields
+    
 
 def do_field_set(envs, args):
     pass
