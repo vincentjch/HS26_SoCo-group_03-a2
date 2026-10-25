@@ -170,17 +170,27 @@ def do_make(envs, args):
 #structure: ["field_get", "p", "x"]]
 def do_field_get(envs, args):
     assert len(args)==2 #instance of a struct and name of one of its fields
-    
-    instance=do(envs, args[0])
-    
+
+    #we distinguish two cases here: 
+    #do we have     ["field_get", ["get", "p"], "x"]
+    #or             ["field_get", "p", "x"]
+    if isinstance(args[0], list):
+        instance=do(envs, args[0])
+    else: 
+        instance=env_get(envs, args[0])
+
     #check that the instance arg is a struct
-    assert isinstance(instance, tuple(TYPES.values())) and not isinstance(instance, int) and not isinstance(instance, float) and not isinstance(instance, list)
+    assert isinstance(instance, dict)
+    assert "type" in instance and "fields" in instance
+    assert instance["type"] in TYPES 
+    assert isinstance(instance["fields"], dict)
+
 
     field_name=args[1]
-    instance_fields=instance[1]
-    #remember: instance_fields looks like [["x", "int"], ["y", "int"]]. Hence:
-    assert field_name in [a[0] for a in instance_fields] #we make sure field_name appears in instanc_fields
-    
+    #remember: instance is a dict of dicts, like: {"type": "Point", "fields": {"x": 7, "y": 8}}
+    instance_fields=instance["fields"]
+    assert field_name in instance_fields #we make sure field_name appears in instanc_fields
+    return instance_fields[field_name]
 
 def do_field_set(envs, args):
     pass

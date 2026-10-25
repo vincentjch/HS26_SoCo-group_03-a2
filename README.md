@@ -15,4 +15,5 @@ Order in which part 1 was coded:
 
 7. make() to instanciate a struct.
 
-8. NEXT: field_get and field_set.
+8. NEXT: - field_get (make sure the tests to ensure the instance is a struct are complete)
+        - field_set.

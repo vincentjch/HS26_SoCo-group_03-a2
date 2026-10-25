@@ -11,3 +11,5 @@
 [24.10, Vincent] say i have a dict of accepted types. can you use isinstance() to check if the object is of a type lists in the dict?
 
 [24.10, Vincent] you missunderstood: say i have a dictionary {"int": int, "float", float} and i want to check that value is of a type that appears in this dictionary. can i use isinstance to do this?
+
+[25.10, Vincent] i instanciate my structs as dictionaries, for example: {"type": "Point", "fields": {"x": 7, "y": 8}}. does this contradict the assignment prerequisites? is it expected that these structs be stored as nested lists as or small language is?
