@@ -192,8 +192,37 @@ def do_field_get(envs, args):
     assert field_name in instance_fields #we make sure field_name appears in instanc_fields
     return instance_fields[field_name]
 
+#structure: ["field_set", "p", "x", 10]
 def do_field_set(envs, args):
-    pass
+    assert len(args)==3
+    #re-use the structure of do_field_get
+    if isinstance(args[0], list):
+        instance=do(envs, args[0])
+    else: 
+        instance=env_get(envs, args[0])
+
+    assert isinstance(instance, dict)
+    assert "type" in instance and "fields" in instance
+    assert instance["type"] in TYPES 
+    assert isinstance(instance["fields"], dict)
+
+    concerned_field=do(envs, args[1]) #which field to replace/set?
+    new_value=do(envs, args[2]) #evaluate the value to set
+
+    #we now need to check that new_value is of the same type as the field we want to replace/define it
+    #retrieve the type:
+    type_name=instance[type]
+    fields=TYPES["type_name"]
+    #find the concerned field
+    for name, declared_type in fields:
+        if name ==concerned_field:
+            #check that the types correspond
+            assert declared_type==type(new_value), "Cannot set, expected type" + declared_type
+            break
+
+    #only then, replace/set:
+    instance[fields][concerned_field]=new_value
+
 
 ########FUNCTIONALITIES##########
 #create or update a variable
