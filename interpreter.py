@@ -99,22 +99,25 @@ def do_not_equal(envs, args):
     return first != second
 
 ########ARRAYS########
+#looks like: ["new_array", "int", 6]
 def do_new_array(envs, args):
     assert len(args)==3 #name, type and length of the array
     assert isinstance(args[0], str)
+    assert args[1] in TYPES #note: the type entries are strings "int", not the direct type int. Hence in TYPES and not TYPES.values()
     
-    name=envs, args[0] #no need of do(), its already a string
-    #check if do() needed after coding datatypes
+    name=args[0] 
     data_type=args[1]
-    size=do(envs, args[2])
-    assert isinstance(size, int) and size>=0
+    length=do(envs, args[2])
+    assert isinstance(length, int) and length>0
+    
     if data_type==float:
-        array=[0.0]*size
+        array=[0.0]*length
     else:
-        array=[0]*size
+        array=[0]*length    #any other type
     env_set(envs, name, array)
     return array
 
+#looks like: ["array_get", ["get", "m"], 0]
 def do_array_get(envs, args):
     pass
 
