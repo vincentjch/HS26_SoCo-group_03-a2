@@ -2,6 +2,8 @@ import json
 import pprint
 import sys
 
+import helpers
+
 #######ARITHMETIC########
 def do_add(envs, args):
     assert len(args) == 2
@@ -112,32 +114,51 @@ def do_not_equal(envs, args):
 
 
 ########ARRAYS########
-#looks like: ["new_array", "int", 6]
+# looks like: ["new_array", "int", 6], but names come from "set": names "squares" and "new_array", then "int" and 6, so 2 args instead of 3
 def do_new_array(envs, args):
-    assert len(args)==3 #name, type and length of the array
+    assert len(args)==2 # type and length of array
     assert isinstance(args[0], str)
-    assert args[1] in TYPES #note: the type entries are strings "int", not the direct type int. Hence in TYPES and not TYPES.values()
     
-    name=args[0] 
+    # do() passes everything after name of the operation, so data_type=args[0] ...
+
     data_type=args[1]
-    length=do(envs, args[2])
-    assert isinstance(length, int) and length>0
+    assert args[0] in TYPES #note: the type entries are strings "int", not the direct type int. Hence in TYPES and not TYPES.values()
+        
+    length=do(envs, args[1])
+    assert isinstance(length, int) and length>=0 # 0 also allowed, for example with for loop
     
-    if data_type==float:
+    if data_type=="float": # compare with float string, not actual float type
         array=[0.0]*length
     else:
         array=[0]*length    #any other type
-    env_set(envs, name, array)
+    # env set already done by do_set() here
+    #env_set(envs, name, array)
     return array
 
 
 #looks like: ["array_get", ["get", "m"], 0]
+#looks like: ["array_get", ["get", "m"], 0]
 def do_array_get(envs, args):
-    pass
+    assert len(args)==2 #array and index
+    array=do(envs, args[0]) #evaluate the array, for example ["get", "m"]
+    assert isinstance(array, list), "array_get needs an array"
+    index=do(envs, args[1])
+    assert isinstance(index, int), "Index has to be an int"
+    assert 0<=index<len(array), "Index out of bounds: " + str(index) #negative indexes are not allowed either
+    return array[index]
 
 
+#looks like: ["array_set", ["get", "squares"], ["get", "i"], ["mult", ["get", "i"], ["get", "i"]]]
 def do_array_set(envs, args):
-    pass
+    assert len(args)==3 #array, index and new value
+    array=do(envs, args[0]) #evaluate the array, for example ["get", "squares"]
+    assert isinstance(array, list), "array_set needs an array"
+    index=do(envs, args[1])
+    assert isinstance(index, int), "Index has to be an int"
+    assert 0<=index<len(array), "Index out of bounds: " + str(index)
+    value=do(envs, args[2]) #evaluate the new value
+    array[index]=value #changes the array itself, so "squares" in the environment changes too
+    return value
 
 
 def do_array_size(envs, args):
@@ -248,6 +269,33 @@ def do_field_set(envs, args):
     instance["fields"][concerned_field]=new_value
 
 
+#looks like: ["range", 6], gives the array [0, 1, 2, 3, 4, 5]
+def do_range(envs, args):
+    assert len(args)==1
+    n=do(envs, args[0])
+    assert isinstance(n, int) and n>=0, "range needs a non negative int"
+    return list(range(n))
+
+
+#looks like: ["for", "i", ["range", 6], body] (very similar to python: for i in range(6))
+def do_for(envs, args):
+    assert len(args)==3 #loop variable name, array, body
+    var_name=args[0]
+    assert isinstance(var_name, str)
+
+    array=do(envs, args[1]) #evaluate the array, for example ["range", 6] or ["get", "squares"]
+    assert isinstance(array, list), "for can only loop over arrays"
+    body=args[2] #not evaluated here, it gets evaluated in every iteration
+
+    result=None #empty array: the loop evaluates to null
+    for element in array:
+        #bind the loop variable in a local environment, same idea as the parameters in do_call
+        envs.append({var_name: element})
+        result=do(envs, body)
+        envs.pop()
+    return result
+
+
 ########FUNCTIONALITIES##########
 #create or update a variable
 def do_set(envs, args):
@@ -317,12 +365,15 @@ def do_null(envs, args):
 
 #looks like: ["print", ["mult", 6, 7]]
 def do_print(envs, args):
-    assert len(args)==1
-    assert isinstance(args[0], list)
+ 
+    # assert len(args)==1
+    # assert isinstance(args[0], list)   would rejected valid programs like ["print", ...]
+    assert len(args) >= 1 # one or MORE than one as well
 
-    result_to_print=do(envs, args)
-    
-    pprint.pprint(result_to_print)
+    # evaluate each argument: args is the list AROUND the arguments, so do(envs, args) crashed
+    values = [do(envs, arg) for arg in args]
+    for value in values:
+        pprint.pprint(value)
     return None
 
 
@@ -359,7 +410,13 @@ def do_call(envs, args):
             param_type=param[1]
             #check, at every function call, that each argument satisfies the
             #annotated type of the parameter
-            assert isinstance(values[index], TYPES[param_type]), func_name + "expect a" + param_type + " and got " + str(values[index])
+                        
+            #assert isinstance(values[index], TYPES[param_type]), func_name + "expect a" + param_type + " and got " + str(values[index])
+
+            # instead check at every function call that every argument passes
+            # the assigned type of the param. Error than outputs func, param and value
+            assert helpers.is_of_type(values[index], param_type, TYPES), func_name + ": parameter " + param_name + " expects " + param_type + ", got " + str(values[index])
+
         else:   #if not, proceed as before
             param_name=param
         local_env[param_name] = values[index]
@@ -377,8 +434,10 @@ def do(envs, expr):
     
     assert isinstance(expr, list)
     func_name = expr[0]
+    
     args = expr[1:]
-    assert func_name in OPS
+
+    assert func_name in OPS, "Operation without do in name: " + str(func_name)
 
     fun = OPS[func_name]
     return fun(envs, args)

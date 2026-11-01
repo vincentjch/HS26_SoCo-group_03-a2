@@ -1,4 +1,4 @@
-######HS26_SoCo-group_03-a2#########
+###### HS26_SoCo-group_03-a2 #########
 Order in which part 1 was coded:
 
 1. Arithmetics and comparison operations. These where quite straightforward
