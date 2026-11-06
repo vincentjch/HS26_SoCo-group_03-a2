@@ -54,7 +54,9 @@ def do_mod(envs, args):
     assert len(args)==2
     first=do(envs, args[0])
     second=do(envs, args[1])
-    assert second>0, "Cannot mod by zero"
+    #assert second>0, "Cannot mod by zero"
+    # only divide by 0 not allowed, negative nums are okay
+    assert second !=0, "Cannot mod by zero"
     return first%second
 
 
@@ -65,7 +67,7 @@ def do_lt(envs, args):
     second=do(envs, args[1])
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
-    return first < second
+    return int(first < second)
 
 
 def do_gt(envs, args):
@@ -74,7 +76,7 @@ def do_gt(envs, args):
     second=do(envs, args[1])
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
-    return first > second
+    return int(first > second)
 
 
 def do_le(envs, args):
@@ -83,7 +85,7 @@ def do_le(envs, args):
     second=do(envs, args[1])
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
-    return first <= second
+    return int(first <= second)
 
 
 def do_ge(envs, args):
@@ -92,7 +94,7 @@ def do_ge(envs, args):
     second=do(envs, args[1])
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
-    return first >= second
+    return int(first >= second)
 
 
 def do_equal(envs, args):
@@ -101,7 +103,7 @@ def do_equal(envs, args):
     second=do(envs, args[1])
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
-    return first == second
+    return int(first == second)
 
 
 def do_not_equal(envs, args):
@@ -110,7 +112,7 @@ def do_not_equal(envs, args):
     second=do(envs, args[1])
     assert isinstance(first, (int, float)), "Invalid type"
     assert isinstance(second, (int, float)), "Invalid type"
-    return first != second
+    return int(first != second)
 
 
 ########ARRAYS########
@@ -119,10 +121,10 @@ def do_new_array(envs, args):
     assert len(args)==2 # type and length of array
     assert isinstance(args[0], str)
     
-    # do() passes everything after name of the operation, so data_type=args[0] ...
-
-    data_type=args[1]
-    assert args[0] in TYPES #note: the type entries are strings "int", not the direct type int. Hence in TYPES and not TYPES.values()
+    # do() passes everything after name of the operation, so data_type is args[0] and length is args[1] here
+    
+    data_type=args[0]
+    assert data_type in TYPES #note: the type entries are strings "int", not the direct type int. Hence in TYPES and not TYPES.values()
         
     length=do(envs, args[1])
     assert isinstance(length, int) and length>=0 # 0 also allowed, for example with for loop
@@ -184,7 +186,10 @@ def do_struct(envs, args):
         assert isinstance(entry, list)
         assert isinstance(entry[0], str)    #first entry is the name
         assert entry[1] in TYPES     #second entry is of known type
-        assert type_name not in TYPES, "Type name already defined" #make sure the type dosn't exists yet
+
+    # should be outside the loop!!
+    assert type_name not in TYPES, "Type name already defined" #make sure the type dosn't exists yet
+    assert type_name not in OPS, "Type name is a keyword" # needs to check that func name is not one of the keywords that we cant overwrite
     
     TYPES[type_name]=fields #now becomes a knew object type
     return None
@@ -204,7 +209,9 @@ def do_make(envs, args):
     for field, value in zip(fields, values):
         field_name=field[0]     #because field looks like ["x", "int"]
         field_type=field[1]
-        assert isinstance(value, TYPES[field_type]), "Incompatible types. Expected:" + field_type + "provided was: " + type(value) #check the value is of correct type
+        #assert isinstance(value, TYPES[field_type]), "Incompatible types. Expected:" + field_type + "provided was: " + type(value) #check the value is of correct type
+        #check the value has the type of the field and helpers.is_of_type also works if the field is a struct type
+        assert helpers.is_of_type(value, field_type, TYPES), "Incompatible types. Expected:" + field_type + "provided was: " + str(type(value)) #check the value is of correct type
 
         field_values[field_name]=value
 
@@ -263,12 +270,17 @@ def do_field_set(envs, args):
     type_name=instance["type"]
     fields=TYPES[type_name]
     #find the concerned field
+    wasfound = False
     for name, declared_type in fields:
         if name ==concerned_field:
             #check that the types correspond
-            assert TYPES[declared_type]==type(new_value), "Cannot set, expected type" + declared_type
+            #assert TYPES[declared_type]==type(new_value), "Cannot set, expected type" + declared_type
+            assert helpers.is_of_type(new_value, declared_type, TYPES), "Cannot set, expected type" + declared_type
             #note: without the TYPES[], we were comparing int with "int" etc
+            wasfound = True
             break
+
+    assert wasfound, "Cannot set, unknown field " + str(concerned_field) #a wrong field name would otherwise be added as a new field 
 
     #only then, replace/set:
     instance["fields"][concerned_field]=new_value
@@ -495,6 +507,15 @@ def do_call(envs, args):
     result = do(envs, body)
     envs.pop()
     SETTINGS["depth"]-=1 #call finished, one level less deep again
+
+    # assignment requires check of return type
+    if isinstance(return_type, list):
+        return_type=return_type[0]
+    if return_type=="null":
+        assert result is None, func_name + ": should return null but got " + str(result)
+    else:
+        assert helpers.is_of_type(result, return_type, TYPES), func_name + ": should return " + return_type + ", got " + str(result)
+    
     return result
 
 

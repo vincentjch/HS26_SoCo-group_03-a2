@@ -19,12 +19,45 @@ Order in which part 1 was coded:
 
 9. new_array. 
 
-TO DO NEXT:
-10. finish implementing arrays. 
-11. Tasks 2 and 3
+10. Debugging print. Passed the whole args into do() method instead of the argument so every print crashed before.
 
-NOTES FOR PAUL:
-there might be something to tackle with arrays and do(). Do() dispatches as long as what we are feeding it is a list... but if we have our array type it might confuse things (maybe not, but we should watch out). 
+11. new_array gets only type and length because name comes from the set.
 
+12. Struct annotations were crashing in do_call, TYPES["Point"] is a field list and not a standard python type. I added helpers py with is_of_type().
 
+13. range, for, array_get, array_set. extensions.mth runs completely with that, but sq_sum still showed 0. Arrays just remain python lists, which works fine with do().
+
+Order in which part 2 was coded:
+
+1. argparse for filename, --max-depth, --debug. SETTINGS dict to store them, like TYPES.
+
+2. --max-depth needed type=int, values from the command line stayed strings
+
+3. notnull and notzero modifiers in do_call. 
+
+4. Recursion limit with a depth counter in do_call. Also array_size, annotations.mth needs it.
+
+5. --debug needed action="store_true", the first fix was wrong
+
+Order in which part 3 was coded:
+
+1. do_debug with c, g and q. Mixed up c and g at first and then fixed it later.
+
+2. counter in debug.mth stayed 0, same problem as sq_sum. env_set now updates the variable where it already exists.
+
+Final fixes for part 1, after going through the assignment again:
+
+1. mod only forbids 0 now, instead of 0 and <0.
+
+2. Comparisons return 1 or 0 instead of True/False.
+
+3. new_array read the type from args[1], so float arrays got 0 instead of 0.0. Struct arrays are filled with 0, kept it simple.
+
+4. Struct name check outside the loop, keywords like func are not allowed.
+
+5. make and field_set use is_of_type, field_set gives an error for unknown fields.
+
+6. Return types are checked in do_call.
+
+AI usage: see AI_usage.md.
 
