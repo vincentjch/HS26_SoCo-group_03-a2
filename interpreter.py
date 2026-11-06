@@ -1,7 +1,7 @@
 import json
 import pprint
 import sys
-
+import argparse
 import helpers
 
 #######ARITHMETIC########
@@ -161,8 +161,13 @@ def do_array_set(envs, args):
     return value
 
 
+#looks like: ["array size", "get", "m"]
 def do_array_size(envs, args):
-    pass
+    
+    assert len(args) == 1
+    array=do(envs, args[0])
+    assert isinstance(array, list)
+    return len(array)
 
 
 ########DECLARED TYPES##########
@@ -311,6 +316,14 @@ def do_set(envs, args):
 #store a name, value in the environment
 def env_set(envs, name, value):
     assert isinstance(name, str)
+
+    # check here: if name already present in an env, update right there
+    # if not, then create in innermost env
+    for env in reversed(envs):
+        if name in env:
+            env[name] = value
+            return # already done here and not executing last line
+
     envs[-1][name] = value
 
 
@@ -357,6 +370,40 @@ def do_if(envs, args):
     result=do(envs, branch)
     return result
 
+# looks like: ["debug", "top lvl breakpoint: counter is 0"]
+def do_debug(envs, args):
+    assert len(args) == 1 # only breakpoint label 
+    bplabel = args[0]
+
+    # only do if SETTING debug is active
+    if not SETTINGS["debug"]:
+        return None
+
+    print(f"Breakpoint : {bplabel}")
+
+    #envs[0] is global env, envs[1:] are local and more inner each
+    for env in envs[1:]:
+        print(f"Local vars : {env}")
+    print(f"Globals vars: {envs[0]}")
+
+    # do endless loop until break
+    while True:
+        debugcommand = input("DEBUG MODE: (Enter 'c' or empty = continue, 'g' = show variables, 'q' = quit): ")
+
+        if debugcommand == "" or debugcommand == "c":
+            return None # just continue program
+        elif debugcommand == "g": 
+            for env in envs[1:]:
+                print(f"Current local variables: {env}")
+            print(f"Global variables: {envs[0]}")
+        elif debugcommand=="q":
+            print(f"Prorgam was aborted in debugger")
+            sys.exit(0)
+        else:
+            print(f"Unkown command: {debugcommand}")
+
+
+
 
 def do_null(envs, args):
     assert len(args)==0
@@ -385,10 +432,11 @@ def env_get(envs, name):
     assert False, "Unknown name: " + name
 
 
-def do_call(envs, args):
-    func_name = args[0]
 
-    assert len(args) >= 1 or func_name=="null"
+
+def do_call(envs, args):
+    assert len(args) >= 1 #check first, before accessing args[0]
+    func_name = args[0]
 
     values = [do(envs, a) for a in args[1:]]
     
@@ -413,18 +461,42 @@ def do_call(envs, args):
                         
             #assert isinstance(values[index], TYPES[param_type]), func_name + "expect a" + param_type + " and got " + str(values[index])
 
+            #param_type can be "int", ["int", "notnull", "notzero"] or only a modifier like "notnull"
+            #put it in a list in every case, so we can loop over it the same way
+            if isinstance(param_type, list):
+                annotations=param_type
+            else:
+                annotations=[param_type]
+
+            #check the modifiers first, so a null value gives a notnull error and not a type error
+            for annot in annotations:
+                if annot=="notnull":
+                    assert values[index] is not None, func_name + ": parameter " + param_name + " Violates notnull, got null"
+                if annot=="notzero":
+                    assert values[index]!=0, func_name + ": parameter " + param_name + " violates notzero, got 0"
+
             # instead check at every function call that every argument passes
             # the assigned type of the param. Error than outputs func, param and value
-            assert helpers.is_of_type(values[index], param_type, TYPES), func_name + ": parameter " + param_name + " expects " + param_type + ", got " + str(values[index])
+            # only for the parts that are not modifiers, these are the base types like "int" or "Point"
+            for annot in annotations:
+                if annot != "notnull" and annot != "notzero":
+                    assert helpers.is_of_type(values[index], annot, TYPES), func_name + ": parameter " + param_name + " expects " + annot + ", got " + str(values[index])
 
-        else:   #if not, proceed as before
+        else:   #if not then proceed as before
             param_name=param
         local_env[param_name] = values[index]
+
+    #recursion limit: one call deeper now, stop if we go deeper than allowed
+    #counted here and not at the start, so calls inside the arguments (like f(g(1))) are not counted one level too deep
+    SETTINGS["depth"]+=1
+    assert SETTINGS["depth"]<=SETTINGS["max_depth"], "Maximum call depth of " + str(SETTINGS["max_depth"]) + " exceeded at call to " + func_name + " with arguments " + str(values)
 
     envs.append(local_env)
     result = do(envs, body)
     envs.pop()
+    SETTINGS["depth"]-=1 #call finished, one level less deep again
     return result
+
 
 
 def do(envs, expr):
@@ -445,7 +517,8 @@ def do(envs, expr):
 
 #######DEFINED VARIABLE TYPES######
 TYPES={"int": int, "float":float, "array":list} #will possibly be completed with new, user declared types
-
+# newly added global storage for tasks 02 and 03
+SETTINGS = {"max_depth": 50, "debug": False, "depth": 0}
 
 #######OPERATIONS######
 def get_ops():
@@ -460,9 +533,21 @@ OPS = get_ops()
 ##########################
 
 def main():
-    assert len(sys.argv) == 2, "Usage: interpreter.py <filename>"
-    filename = sys.argv[1]
-    with open(filename, "r") as f:
+    #assert len(sys.argv) == 2, "Usage: interpreter.py <filename>"
+    #filename = sys.argv[1]
+
+    # using argparse here to proceed with tasks 02 and 03
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filename")
+    parser.add_argument("--max-depth", type=int, default=50)
+    parser.add_argument("--debug", action="store_true")
+
+    args = parser.parse_args()
+
+    SETTINGS["max_depth"] = args.max_depth
+    SETTINGS["debug"] = args.debug
+
+    with open(args.filename, "r") as f:
         program = json.load(f)
         envs = [dict()]
         print("Environment before: ")

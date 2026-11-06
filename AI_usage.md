@@ -16,3 +16,14 @@
 
 [25.10, Vincent] in python, is it acceptable to have an if condition that is always wrong? say: if []: ...
 
+[04.11, Paul] in plain words, anything else than a return of len of an array for the array size? Input arguments would have len 1?
+
+[04.11, Paul] do a simplified example of do_call func, how would you check for 2 different annotations "x" and "y"?
+
+[04.11, Paul] Whats exactly is a breakpoint in our interpreter? When do() reaches ["debug", "label"], what should happen with and without the --debug? Explain in detail in plain text
+
+ [04.11, Paul]Recap please, Which variables count as ‘local’ and which as ‘global’ in our envs list? What does envs look like at each breakpoint in debug.mth? 
+
+[04.11, Paul] Why does debug.mth show counter as 0 inside add_n with our current env_set, and what has to change so it becomes 5 and then 12?
+
+[04.11, Paul] Do 2-3 examples, make up some random simple .py codes, dont use anything from interpreter.py code, implement a similar breakpoint logic there
